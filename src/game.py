@@ -33,6 +33,7 @@ def getSocietyPayoff(soc1, soc2):
 
 class Agent:
     def __init__(self, strategy):
+        self.games = 0.0
         self.score = 0
         self.society = randint(0, 3)
         self.strategy = strategy
@@ -52,6 +53,8 @@ class Agent:
 
     def play(self, other):
         payoff = getSocietyPayoff(self.society, other.society)
+
+        self.games += 1
         self.score += payoff
 
         return payoff
@@ -71,6 +74,11 @@ class Game:
         self.iterations = N
 
     def play(self):
+        # reset player scores
+        for agent in self.agents:
+            agent.score = 0
+            agent.games = 0
+
         for _ in range(self.iterations):
             # choose players randomly
             player1 = choice(self.agents)
@@ -84,7 +92,7 @@ class Game:
             player1.chooseSociety(player2)
             player2.chooseSociety(player1)
 
-        # return average score per iteration of the game
+        # return score
         return [(p.score,) for p in self.agents]
 
 
