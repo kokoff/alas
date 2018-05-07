@@ -92,6 +92,7 @@ class Game:
             player1.chooseSociety(player2)
             player2.chooseSociety(player1)
 
+        # print [a.strategy[0] for a in self.agents[1:]]
         # return score
         return [(p.score,) for p in self.agents]
 
