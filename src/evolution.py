@@ -1,11 +1,10 @@
 import os
 import random
+from csv import writer
 
-import numpy as np
 from deap import base, creator
 from deap import tools
 from matplotlib import pyplot as plt
-from csv import writer
 
 from game import Game, Agent
 
