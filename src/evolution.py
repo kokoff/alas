@@ -1,12 +1,12 @@
-from deap import base, creator
-from game import Game, Agent
+import os
 import random
-from deap import tools
-from collections import Counter, OrderedDict
-from matplotlib import pyplot as plt
-import csv
-import pandas as pd
+
 import numpy as np
+from deap import base, creator
+from deap import tools
+from matplotlib import pyplot as plt
+
+from game import Game, Agent
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
 creator.create("Individual", list, fitness=creator.FitnessMax)
@@ -75,7 +75,6 @@ def singleAgentEvolution(CXPB, MUTPB, NGEN, N):
     pop = toolbox.population(n=NUM_IND)
     agents = [Agent(ind) for ind in pop]
     game = Game(agents, N)
-    avg_fitness = []
 
     # Evaluate the entire population
     fitnesses = game.play()
@@ -112,12 +111,6 @@ def singleAgentEvolution(CXPB, MUTPB, NGEN, N):
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = fit
 
-        # save average fitness
-        avg_fitness.append(np.max(fitnesses))
-
-    plt.plot(avg_fitness)
-    plt.show()
-
     # get best agent
     best = agents[0]
     for agent in agents:
@@ -127,13 +120,13 @@ def singleAgentEvolution(CXPB, MUTPB, NGEN, N):
     return best
 
 
-def test_run(best, N, test_runs):
+def evaluation(best, N, test_runs, output_dir):
     print 'TEST RUN'
     results = []
     position = []
 
     for _ in range(test_runs):
-        agents = [Agent([random.randint(-1, 3) for _ in range(IND_SIZE)])
+        agents = [Agent([-1 for _ in range(IND_SIZE)])
                   for _ in range(NUM_IND)]
 
         agents[0] = best
@@ -143,14 +136,35 @@ def test_run(best, N, test_runs):
         results.append(best.score)
         position.append(sorted([a.score for a in agents], reverse=True).index(best.score))
 
-    plt.hist(results)
-    plt.show()
+    # Save results
+    if not os.path.exists(output_dir):
+        os.mkdir(output_dir)
 
+    plt.figure()
+    plt.hist(results)
+    plt.savefig(os.path.join(output_dir, 'scores.pdf'))
+
+    plt.figure()
     plt.hist(position)
-    plt.show()
+    plt.savefig(os.path.join(output_dir, 'ranks.pdf'))
+
+    with open(os.path.join(output_dir, 'strategy.txt'), 'w') as f:
+        f.write(str(best.strategy))
+
+    return results, position
 
 
 if __name__ == '__main__':
-    CXPB, MUTPB, NGEN, N = 0.5, 0.2, 10000, 1000
+    CXPB, MUTPB, NGEN, N, TEST_RUNS = 0.5, 0.2, 10000, 1000, 1000
+
+    # Baseline agent who never changes society
+    best = Agent([-1] * 32)
+    evaluation(best, N, TEST_RUNS, 'baseline')
+
+    # All agents evolving at the same time
     best = multiAgentEvolution(CXPB, MUTPB, NGEN, N)
-    test_run(best, N, 1000)
+    evaluation(best, N, TEST_RUNS, 'multi_evolution')
+
+    # One agent evolving at a time
+    best = singleAgentEvolution(CXPB, MUTPB, NGEN, N)
+    evaluation(best, N, TEST_RUNS, 'single_evolution')
