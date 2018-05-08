@@ -5,6 +5,7 @@ import numpy as np
 from deap import base, creator
 from deap import tools
 from matplotlib import pyplot as plt
+from csv import writer
 
 from game import Game, Agent
 
@@ -120,7 +121,7 @@ def singleAgentEvolution(CXPB, MUTPB, NGEN, N):
     return best
 
 
-def evaluation(best, N, test_runs, output_dir):
+def evaluation(best, N, test_runs, output_dir, random=False):
     print 'TEST RUN'
     results = []
     position = []
@@ -128,6 +129,9 @@ def evaluation(best, N, test_runs, output_dir):
     for _ in range(test_runs):
         agents = [Agent([-1 for _ in range(IND_SIZE)])
                   for _ in range(NUM_IND)]
+
+        if random:
+            best = Agent([-1] * 32)
 
         agents[0] = best
         game = Game(agents, N)
@@ -142,11 +146,23 @@ def evaluation(best, N, test_runs, output_dir):
 
     plt.figure()
     plt.hist(results)
+    plt.xlabel('Score')
+    plt.ylabel('Frequency')
     plt.savefig(os.path.join(output_dir, 'scores.pdf'))
 
     plt.figure()
     plt.hist(position)
+    plt.xlabel('Rank')
+    plt.ylabel('Frequency')
     plt.savefig(os.path.join(output_dir, 'ranks.pdf'))
+
+    with open(os.path.join(output_dir, 'scores.csv'), 'w') as f:
+        w = writer(f)
+        w.writerow(results)
+
+    with open(os.path.join(output_dir, 'ranks.csv'), 'w') as f:
+        w = writer(f)
+        w.writerow(position)
 
     with open(os.path.join(output_dir, 'strategy.txt'), 'w') as f:
         f.write(str(best.strategy))
@@ -157,14 +173,28 @@ def evaluation(best, N, test_runs, output_dir):
 if __name__ == '__main__':
     CXPB, MUTPB, NGEN, N, TEST_RUNS = 0.5, 0.2, 10000, 1000, 1000
 
+    NUM_IND = 20
     # Baseline agent who never changes society
     best = Agent([-1] * 32)
-    evaluation(best, N, TEST_RUNS, 'baseline')
+    evaluation(best, N, TEST_RUNS, 'baseline_20', random=True)
 
     # All agents evolving at the same time
     best = multiAgentEvolution(CXPB, MUTPB, NGEN, N)
-    evaluation(best, N, TEST_RUNS, 'multi_evolution')
+    evaluation(best, N, TEST_RUNS, 'multi_evolution_20')
 
     # One agent evolving at a time
     best = singleAgentEvolution(CXPB, MUTPB, NGEN, N)
-    evaluation(best, N, TEST_RUNS, 'single_evolution')
+    evaluation(best, N, TEST_RUNS, 'single_evolution_20')
+
+    NUM_IND = 100
+    # Baseline agent who never changes society
+    best = Agent([-1] * 32)
+    evaluation(best, N, TEST_RUNS, 'baseline_100', random=True)
+
+    # All agents evolving at the same time
+    best = multiAgentEvolution(CXPB, MUTPB, NGEN, N)
+    evaluation(best, N, TEST_RUNS, 'multi_evolution_100')
+
+    # One agent evolving at a time
+    best = singleAgentEvolution(CXPB, MUTPB, NGEN, N)
+    evaluation(best, N, TEST_RUNS, 'single_evolution_100')
